@@ -155,41 +155,46 @@ const renderAdminView = () => {
 
             <!-- Add/Edit Design Area -->
             <div class="upload-form-container">
-                <h3 class="mb-4" id="form-design-title">Edit Design Info</h3>
-                <p class="text-muted mb-4" style="font-size: 0.9rem;">To upload new designs, drag your image files directly into the <code>images/designs</code> folder on your computer and double-click <code>update_catalog.ps1</code> to inject them. Below you can edit prices and categories of existing ones.</p>
+                <h3 class="mb-4" id="form-design-title">Add New Design</h3>
+                <p class="text-muted mb-4" style="font-size: 0.9rem;">Upload a new image directly to your website. <strong>Requires GitHub Integration to be configured in Settings.</strong></p>
                 
                 <form id="admin-upload-form">
                     <input type="hidden" id="edit-mode-id" value="">
                     
+                    <div class="form-group" id="file-upload-group">
+                        <label>Design Image (JPG/PNG)</label>
+                        <input type="file" id="add-file" class="form-control" accept="image/*">
+                    </div>
+
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="form-group">
-                            <label>Design ID (Filename)</label>
-                            <input type="text" id="add-id" class="form-control" placeholder="Select a design to edit..." disabled>
+                        <div class="form-group" id="id-input-group" style="display:none;">
+                            <label>Design ID</label>
+                            <input type="text" id="add-id" class="form-control" disabled>
                         </div>
                         <div class="form-group">
                             <label>Title</label>
-                            <input type="text" id="add-title" class="form-control" required placeholder="Design Name" disabled>
+                            <input type="text" id="add-title" class="form-control" required placeholder="Design Name">
                         </div>
                     </div>
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                             <label>Category</label>
-                            <select id="add-category" class="form-control" required disabled>
+                            <select id="add-category" class="form-control" required>
                                 <option value="" disabled selected>Select a category...</option>
                                 ${Object.keys(categories).map(k => `<option value="${k}">${categories[k]}</option>`).join('')}
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Price (₹)</label>
-                            <input type="number" id="add-price" class="form-control" required min="0" step="1" placeholder="999" disabled>
+                            <input type="number" id="add-price" class="form-control" required min="0" step="1" placeholder="99">
                         </div>
                     </div>
 
                     <div class="error-msg" id="form-error-msg"></div>
 
                     <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;" id="btn-submit-design" disabled>Save Edits</button>
+                        <button type="submit" class="btn btn-primary" style="flex: 1;" id="btn-submit-design">Upload Design</button>
                         <button type="button" class="btn btn-secondary hidden" id="btn-cancel-edit">Cancel Edit</button>
                     </div>
                 </form>
@@ -281,6 +286,23 @@ const renderAdminView = () => {
                     </div>
                     <div class="error-msg" id="creds-error-msg" style="margin-bottom: 1rem;"></div>
                     <button type="submit" class="btn btn-secondary w-full" id="btn-save-creds">Update Credentials</button>
+                </form>
+            </div>
+
+            <div class="upload-form-container" style="margin-top: 2rem;">
+                <h3 class="t-h4" style="margin-bottom: 0.5rem;">GitHub Integration</h3>
+                <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.9rem;">To upload images directly to the live website, provide your GitHub securely here. It is saved only on your local browser.</p>
+                <form id="admin-github-form">
+                    <div class="form-group">
+                        <label>Repository (e.g. rajee-embroidery/rajee-embroidery.github.io)</label>
+                        <input type="text" id="setting-github-repo" class="form-control" value="${window.appStore.getGithubConfig().repo}" placeholder="username/repository" required>
+                    </div>
+                    <div class="form-group">
+                        <label>GitHub Personal Access Token</label>
+                        <input type="password" id="setting-github-token" class="form-control" value="${window.appStore.getGithubConfig().token}" placeholder="ghp_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" required>
+                    </div>
+                    <p class="text-muted" style="font-size: 0.8rem; margin-bottom: 1rem;">Copy your token from your initial deploy_github.ps1 script.</p>
+                    <button type="submit" class="btn btn-primary w-full text-center">Save GitHub Credentials</button>
                 </form>
             </div>
         </div>
