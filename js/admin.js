@@ -208,34 +208,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const editId = document.getElementById('edit-mode-id').value;
                 const fileInput = document.getElementById('add-file');
-                const file = fileInput ? fileInput.files[0] : null;
+                const files = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
                 const submitBtn = document.getElementById('btn-submit-design');
 
-                const designData = {
-                    title: document.getElementById('add-title').value.trim(),
-                    category: document.getElementById('add-category').value,
-                    price: parseFloat(document.getElementById('add-price').value).toFixed(2)
-                };
+                let inputTitle = document.getElementById('add-title').value.trim();
+                const inputCategory = document.getElementById('add-category').value;
+                const inputPrice = parseFloat(document.getElementById('add-price').value).toFixed(2);
 
                 try {
                     submitBtn.disabled = true;
                     if (editId) {
                         // Edit Mode
-                        store.updateDesign(editId, designData);
+                        store.updateDesign(editId, { title: inputTitle, category: inputCategory, price: inputPrice });
                         alert('Design updated successfully!');
                         renderDashboard();
                         cancelEditMode();
                     } else {
                         // Upload Mode
-                        if (!file) throw new Error("Please select an image file to upload.");
-                        if (file.size > 5 * 1024 * 1024) throw new Error("File too large. Max 5MB.");
+                        if (files.length === 0) throw new Error("Please select an image file to upload.");
                         
-                        submitBtn.textContent = 'Uploading to GitHub...';
-                        await store.uploadToGithub(file, designData);
-                        alert('Success! Image and database updated on GitHub. It may take 1-3 minutes to update globally.');
+                        const designsData = files.map(file => {
+                            if (file.size > 5 * 1024 * 1024) throw new Error(`File ${file.name} is too large. Max 5MB per file.`);
+                            return {
+                                file: file,
+                                // If multiple files, use filename as title if none provided
+                                title: inputTitle || file.name.split('.').slice(0, -1).join(' '),
+                                category: inputCategory,
+                                price: inputPrice
+                            };
+                        });
+                        
+                        submitBtn.textContent = `Uploading ${files.length} Design(s) to GitHub...`;
+                        await store.uploadMultipleToGithub(designsData);
+                        alert(`Success! ${files.length} design(s) uploaded. It may take 1-3 minutes to update globally.`);
                         if (fileInput) fileInput.value = '';
                         document.getElementById('add-title').value = '';
-                        document.getElementById('add-price').value = '';
+                        // Do not clear price/category to make mass-adding easier
                         renderDashboard();
                     }
                 } catch (err) {
