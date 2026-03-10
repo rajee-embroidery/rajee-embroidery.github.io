@@ -209,7 +209,7 @@ class Store {
         }).join(''));
     }
 
-    async uploadToGithub(file, designData) {
+    async uploadMultipleToGithub(designsData) {
         const config = this.getGithubConfig();
         if (!config.token || !config.repo) {
             throw new Error("GitHub Integration not configured. Please set repository and token in Settings.");
@@ -222,28 +222,45 @@ class Store {
         };
         const baseUrl = `https://api.github.com/repos/${config.repo}/contents`;
         
-        // 1. Upload original Image Base64
-        const ext = file.name.split('.').pop();
-        const cleanTitle = designData.title.replace(/[^a-zA-Z0-9-]/g, '-');
-        const timestamp = new Date().getTime();
-        const filename = `${cleanTitle}-${timestamp}.${ext}`;
-        const designId = cleanTitle + '-' + timestamp;
+        const newItems = [];
         
-        const base64Image = await this.fileToBase64(file);
-        
-        const imageRes = await fetch(`${baseUrl}/images/designs/${filename}`, {
-            method: 'PUT',
-            headers,
-            body: JSON.stringify({
-                message: `Upload design image: ${designId}`,
-                content: base64Image
-            })
-        });
-        
-        if (!imageRes.ok) {
-            const err = await imageRes.json();
-            throw new Error(`Failed to upload image: ${err.message}`);
+        // 1. Upload all Image Base64 sequentially
+        for (const data of designsData) {
+            const ext = data.file.name.split('.').pop();
+            const cleanTitle = data.title.replace(/[^a-zA-Z0-9-]/g, '-').substring(0, 30);
+            const timestamp = Math.floor(Math.random() * 10000) + new Date().getTime().toString().slice(-6);
+            const filename = `${cleanTitle}-${timestamp}.${ext}`;
+            const designId = cleanTitle + '-' + timestamp;
+            
+            const base64Image = await this.fileToBase64(data.file);
+            
+            const imageRes = await fetch(`${baseUrl}/images/designs/${filename}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({
+                    message: `Upload mass design images: ${designId}`,
+                    content: base64Image
+                })
+            });
+            
+            if (!imageRes.ok) {
+                const err = await imageRes.json();
+                console.error(`Failed to upload image ${filename}: ${err.message}`);
+                continue; // Skip this one but try the rest
+            }
+
+            const item = {
+                id: designId,
+                title: data.title,
+                category: data.category,
+                price: data.price,
+                imageUrl: `images/designs/${filename}`,
+                dateAdded: new Date().toISOString()
+            };
+            newItems.push(item);
         }
+
+        if (newItems.length === 0) throw new Error("Could not upload any images.");
 
         // 2. Fetch js/database.js
         let dbSha = null;
@@ -263,21 +280,13 @@ class Store {
             console.error("No existing database found or format error", e);
         }
 
-        // 3. Append new item
-        const newItem = {
-            id: designId,
-            title: designData.title,
-            category: designData.category,
-            price: designData.price,
-            imageUrl: `images/designs/${filename}`,
-            dateAdded: new Date().toISOString()
-        };
-        pCatalog.push(newItem);
+        // 3. Append new items
+        pCatalog.push(...newItems);
 
         // Update local static data immediately for instant preview
-        if (window.CATALOG_DATA) window.CATALOG_DATA.push(newItem);
+        if (window.CATALOG_DATA) window.CATALOG_DATA.push(...newItems);
 
-        // 4. Update js/database.js
+        // 4. Update js/database.js in one fell swoop
         const newDbContentStr = `window.CATALOG_DATA = ${JSON.stringify(pCatalog, null, 4)};`;
         const newDbBase64 = this.b64EncodeUnicode(newDbContentStr);
 
@@ -285,7 +294,7 @@ class Store {
             method: 'PUT',
             headers,
             body: JSON.stringify({
-                message: `Add design entry: ${designId}`,
+                message: `Bulk add ${newItems.length} designs via Admin Portal`,
                 content: newDbBase64,
                 sha: dbSha
             })
@@ -293,7 +302,7 @@ class Store {
 
         if (!dbPutRes.ok) {
             const err = await dbPutRes.json();
-            throw new Error(`Failed to update database: ${err.message}`);
+            throw new Error(`Images uploaded, but failed to update database: ${err.message}`);
         }
 
         return true;
