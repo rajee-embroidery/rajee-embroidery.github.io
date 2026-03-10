@@ -162,8 +162,8 @@ const renderAdminView = () => {
                     <input type="hidden" id="edit-mode-id" value="">
                     
                     <div class="form-group" id="file-upload-group">
-                        <label>Design Image (JPG/PNG)</label>
-                        <input type="file" id="add-file" class="form-control" accept="image/*">
+                        <label>Design Images (JPG/PNG - You can select multiple!)</label>
+                        <input type="file" id="add-file" class="form-control" accept="image/*" multiple>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -172,8 +172,8 @@ const renderAdminView = () => {
                             <input type="text" id="add-id" class="form-control" disabled>
                         </div>
                         <div class="form-group">
-                            <label>Title</label>
-                            <input type="text" id="add-title" class="form-control" required placeholder="Design Name">
+                            <label>Title (Optional for bulk)</label>
+                            <input type="text" id="add-title" class="form-control" placeholder="Leave blank to use filename">
                         </div>
                     </div>
                     
