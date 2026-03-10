@@ -177,6 +177,128 @@ class Store {
     logoutAdmin() { localStorage.removeItem(this.AUTH_ADMIN_KEY); }
     isAdmin() { return localStorage.getItem(this.AUTH_ADMIN_KEY) === 'true'; }
 
+    // --- GitHub CMS Integration ---
+    getGithubConfig() {
+        return JSON.parse(localStorage.getItem('stitch_thread_github')) || { token: '', repo: 'rajee-embroidery/rajee-embroidery.github.io' };
+    }
+
+    setGithubConfig(repo, token) {
+        localStorage.setItem('stitch_thread_github', JSON.stringify({ repo, token }));
+        return true;
+    }
+
+    fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    b64EncodeUnicode(str) {
+        return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+            function toSolidBytes(match, p1) {
+                return String.fromCharCode('0x' + p1);
+        }));
+    }
+
+    b64DecodeUnicode(str) {
+        return decodeURIComponent(atob(str).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+    }
+
+    async uploadToGithub(file, designData) {
+        const config = this.getGithubConfig();
+        if (!config.token || !config.repo) {
+            throw new Error("GitHub Integration not configured. Please set repository and token in Settings.");
+        }
+
+        const headers = {
+            "Authorization": `token ${config.token}`,
+            "Accept": "application/vnd.github.v3+json",
+            "Content-Type": "application/json"
+        };
+        const baseUrl = `https://api.github.com/repos/${config.repo}/contents`;
+        
+        // 1. Upload original Image Base64
+        const ext = file.name.split('.').pop();
+        const cleanTitle = designData.title.replace(/[^a-zA-Z0-9-]/g, '-');
+        const timestamp = new Date().getTime();
+        const filename = `${cleanTitle}-${timestamp}.${ext}`;
+        const designId = cleanTitle + '-' + timestamp;
+        
+        const base64Image = await this.fileToBase64(file);
+        
+        const imageRes = await fetch(`${baseUrl}/images/designs/${filename}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({
+                message: `Upload design image: ${designId}`,
+                content: base64Image
+            })
+        });
+        
+        if (!imageRes.ok) {
+            const err = await imageRes.json();
+            throw new Error(`Failed to upload image: ${err.message}`);
+        }
+
+        // 2. Fetch js/database.js
+        let dbSha = null;
+        let pCatalog = [];
+        try {
+            const dbGetRes = await fetch(`${baseUrl}/js/database.js`, { headers, method: 'GET' });
+            if (dbGetRes.ok) {
+                const dbDataUrl = await dbGetRes.json();
+                dbSha = dbDataUrl.sha;
+                const dbContentStr = this.b64DecodeUnicode(dbDataUrl.content);
+                const match = dbContentStr.match(/window\.CATALOG_DATA\s*=\s*(\[.*\]);?/s);
+                if (match && match[1]) {
+                    pCatalog = JSON.parse(match[1]);
+                }
+            }
+        } catch (e) {
+            console.error("No existing database found or format error", e);
+        }
+
+        // 3. Append new item
+        const newItem = {
+            id: designId,
+            title: designData.title,
+            category: designData.category,
+            price: designData.price,
+            imageUrl: `images/designs/${filename}`,
+            dateAdded: new Date().toISOString()
+        };
+        pCatalog.push(newItem);
+
+        // Update local static data immediately for instant preview
+        if (window.CATALOG_DATA) window.CATALOG_DATA.push(newItem);
+
+        // 4. Update js/database.js
+        const newDbContentStr = `window.CATALOG_DATA = ${JSON.stringify(pCatalog, null, 4)};`;
+        const newDbBase64 = this.b64EncodeUnicode(newDbContentStr);
+
+        const dbPutRes = await fetch(`${baseUrl}/js/database.js`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({
+                message: `Add design entry: ${designId}`,
+                content: newDbBase64,
+                sha: dbSha
+            })
+        });
+
+        if (!dbPutRes.ok) {
+            const err = await dbPutRes.json();
+            throw new Error(`Failed to update database: ${err.message}`);
+        }
+
+        return true;
+    }
+
     // --- Client Authentication & Profiles ---
     getAllClients() {
         return JSON.parse(localStorage.getItem(this.CLIENT_LIST_KEY)) || [];
