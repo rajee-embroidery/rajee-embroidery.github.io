@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Discover premium, meticulously digitized embroidery patterns at Rajee Embroidery in Madurai. 13,000+ designs for professionals and passionate creators.">
+    <meta name="keywords" content="Embroidery designs, Madurai embroidery, Digitized patterns, Rajee Embroidery, Selvspuram">
+    <title>Rajee Embroidery | Premium Designs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="#" class="brand-logo" data-route="home">
+                <span class="logo-icon">🧵</span> Rajee Embroidery
+            </a>
+            <nav class="nav-links">
+                <a href="#" class="nav-link" data-route="home">Home</a>
+                <a href="#" class="nav-link" data-route="catalog">Catalog</a>
+                <a href="#" class="nav-link upload-btn" id="nav-upload-btn">Find Similar</a>
+                <a href="#" class="nav-link cart-link" id="nav-cart-btn" style="position: relative; display: flex; align-items: center; gap: 0.5rem;">
+                    🛒 Cart <span id="cart-badge" class="cart-badge" style="display: none;">0</span>
+                </a>
+                <a href="#" class="nav-link" id="nav-account-btn">Sign In</a>
+            </nav>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <main id="app-content">
+        <!-- Views injected here by app.js -->
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h3>Rajee Embroidery</h3>
+                <p>Premium embroidery designs for professionals and hobbyists.</p>
+                <div style="margin-top: 1rem; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.8;">
+                    <p>📍 Selvspuram 1st street, Guhan school near<br>Irraravathanallur, Madurai - 9</p>
+                    <p style="margin-top: 0.5rem;">
+                        📞 <a href="tel:+918428705203" style="color: var(--brand-gold);">+91 84287 05203</a><br>
+                        💬 <a href="https://wa.me/918428705203" target="_blank" style="color: #25D366; font-weight: 500;">WhatsApp Us</a>
+                    </p>
+                </div>
+            </div>
+            <div class="footer-links">
+                <a href="#" data-route="home">Home</a>
+                <a href="#" data-route="catalog">Catalog</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Rajee Embroidery. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Image Search Modal -->
+    <div id="image-search-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-search-modal">&times;</span>
+            <h2>Find Similar Designs</h2>
+            <p class="modal-subtitle">Upload a photo to find matching embroidery patterns.</p>
+            
+            <div class="upload-area" id="search-upload-area">
+                <input type="file" id="search-image-input" accept="image/*" hidden>
+                <div class="upload-icon">📸</div>
+                <h3>Click to upload or drag and drop</h3>
+                <p>JPG, PNG or WEBP (max. 5MB)</p>
+            </div>
+            
+            <div id="search-preview-container" class="preview-container hidden">
+                <img id="search-image-preview" src="" alt="Preview">
+                <button class="btn btn-primary" id="btn-find-similar">Find Matches</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div id="cart-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="close-cart-modal">&times;</span>
+            <h2>Your Shopping Cart</h2>
+            <div id="cart-content-area" style="margin-top: 1.5rem;">
+                <!-- Cart items render here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Client Login Modal -->
+    <div id="client-login-modal" class="modal">
+        <div class="modal-content admin-login-content">
+            <span class="close-modal" id="close-client-login-modal">&times;</span>
+            <h2>Sign In / Register</h2>
+            <p class="modal-subtitle">Access your account and track orders.</p>
+            <form id="client-login-form">
+                <div class="form-group">
+                    <label for="client-name">Full Name:</label>
+                    <input type="text" id="client-name" class="form-control" placeholder="Enter your name" required>
+                </div>
+                <div class="form-group">
+                    <label for="client-phone">WhatsApp Number:</label>
+                    <input type="tel" id="client-phone" class="form-control" placeholder="Enter 10-digit number" required pattern="[0-9]{10}">
+                </div>
+                <button type="submit" class="btn btn-primary w-full">Continue</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/database.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/views.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
