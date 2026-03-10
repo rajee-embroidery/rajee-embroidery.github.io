@@ -1,0 +1,250 @@
+/**
+ * Admin Portal Logic
+ * Isolated script to manage the Admin Dashboard without exposing it to the client app.
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    const appContent = document.getElementById('app-content');
+    const loginModal = document.getElementById('admin-login-modal');
+    const loginForm = document.getElementById('login-form');
+    const adminUsername = document.getElementById('admin-username');
+    const adminPassword = document.getElementById('admin-password');
+    const loginError = document.getElementById('login-error');
+
+    const store = window.appStore;
+    const views = window.views;
+
+    function checkAuth() {
+        if (store.isAdmin()) {
+            loginModal.classList.remove('active');
+            renderDashboard();
+        } else {
+            loginModal.classList.add('active');
+            appContent.innerHTML = ''; // Hide dashboard if not logged in
+        }
+    }
+
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (store.loginAdmin(adminUsername.value.trim(), adminPassword.value)) {
+            checkAuth();
+            adminPassword.value = '';
+        } else {
+            loginError.textContent = 'Invalid Username or Password. Access denied.';
+        }
+    });
+
+    function renderDashboard() {
+        appContent.innerHTML = views.renderAdminView();
+        
+        // Reattach events
+        const btnLogout = document.getElementById('btn-logout');
+        const btnFactoryReset = document.getElementById('btn-factory-reset');
+        const btnTabDesigns = document.getElementById('btn-tab-designs');
+        const btnTabSettings = document.getElementById('btn-tab-settings');
+        const viewDesigns = document.getElementById('admin-designs-view');
+        const viewSettings = document.getElementById('admin-settings-view');
+
+        const adminUploadForm = document.getElementById('admin-upload-form');
+        const adminCategoryForm = document.getElementById('admin-category-form');
+        const deleteBtns = document.querySelectorAll('.btn-delete');
+        const editBtns = document.querySelectorAll('.btn-edit');
+        const deleteCatBtns = document.querySelectorAll('.btn-delete-cat');
+        const btnCancelEdit = document.getElementById('btn-cancel-edit');
+        const formErrorMsg = document.getElementById('form-error-msg');
+
+        // Tab Switching Logic
+        if (btnTabDesigns && btnTabSettings) {
+            btnTabDesigns.addEventListener('click', () => {
+                viewDesigns.classList.remove('hidden');
+                viewSettings.classList.add('hidden');
+                btnTabDesigns.classList.replace('btn-outline', 'btn-primary');
+                btnTabSettings.classList.replace('btn-primary', 'btn-outline');
+            });
+            
+            btnTabSettings.addEventListener('click', () => {
+                viewSettings.classList.remove('hidden');
+                viewDesigns.classList.add('hidden');
+                btnTabSettings.classList.replace('btn-outline', 'btn-primary');
+                btnTabDesigns.classList.replace('btn-primary', 'btn-outline');
+            });
+        }
+
+        // Logout
+        if (btnLogout) {
+            btnLogout.addEventListener('click', () => {
+                store.logoutAdmin();
+                checkAuth();
+            });
+        }
+
+        // Factory Reset
+        if (btnFactoryReset) {
+            btnFactoryReset.addEventListener('click', () => {
+                if (confirm("WARNING: This will delete ALL designs and categories. Are you sure you want to completely clear the store?")) {
+                    store.clearAllData();
+                    renderDashboard(); // refresh
+                }
+            });
+        }
+
+        // Add Category
+        if (adminCategoryForm) {
+            adminCategoryForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const catName = document.getElementById('add-cat-name').value.trim();
+                if (catName) {
+                    store.addCategory(catName);
+                    renderDashboard();
+                }
+            });
+        }
+
+        // Delete Category
+        deleteCatBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.id;
+                if (confirm(`Delete the "${store.getCategories()[id]}" category?`)) {
+                    store.deleteCategory(id);
+                    renderDashboard();
+                }
+            });
+        });
+
+        // Edit Mode Setup
+        function setEditMode(designId) {
+            const design = store.getDesignById(designId);
+            if (!design) return;
+
+            document.getElementById('edit-mode-id').value = design.id;
+            
+            const idInput = document.getElementById('add-id');
+            idInput.value = design.id;
+            idInput.disabled = true;
+
+            const titleInput = document.getElementById('add-title');
+            titleInput.value = design.title;
+            titleInput.disabled = false;
+
+            const catInput = document.getElementById('add-category');
+            catInput.value = design.category;
+            catInput.disabled = false;
+
+            const priceInput = document.getElementById('add-price');
+            priceInput.value = parseFloat(design.price).toFixed(2);
+            priceInput.disabled = false;
+
+            document.getElementById('form-design-title').textContent = `Editing Design: ${design.id}`;
+            document.getElementById('btn-submit-design').textContent = 'Update Design';
+            document.getElementById('btn-submit-design').disabled = false;
+            btnCancelEdit.classList.remove('hidden');
+            formErrorMsg.textContent = '';
+            
+            document.getElementById('form-design-title').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelEditMode() {
+            document.getElementById('edit-mode-id').value = '';
+            
+            const idInput = document.getElementById('add-id');
+            idInput.value = '';
+            idInput.disabled = true;
+
+            const titleInput = document.getElementById('add-title');
+            titleInput.value = '';
+            titleInput.disabled = true;
+
+            const catInput = document.getElementById('add-category');
+            catInput.value = '';
+            catInput.disabled = true;
+
+            const priceInput = document.getElementById('add-price');
+            priceInput.value = '';
+            priceInput.disabled = true;
+
+            document.getElementById('form-design-title').textContent = 'Edit Design Info';
+            document.getElementById('btn-submit-design').textContent = 'Save Edits';
+            document.getElementById('btn-submit-design').disabled = true;
+            btnCancelEdit.classList.add('hidden');
+            formErrorMsg.textContent = '';
+        }
+
+        if (btnCancelEdit) btnCancelEdit.addEventListener('click', cancelEditMode);
+
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                setEditMode(e.currentTarget.dataset.id);
+            });
+        });
+
+        if (adminUploadForm) {
+            adminUploadForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                formErrorMsg.textContent = '';
+                
+                const editId = document.getElementById('edit-mode-id').value;
+                if (!editId) return; // Only editing is allowed
+
+                const designData = {
+                    title: document.getElementById('add-title').value.trim(),
+                    category: document.getElementById('add-category').value,
+                    price: parseFloat(document.getElementById('add-price').value).toFixed(2)
+                };
+
+                try {
+                    store.updateDesign(editId, designData);
+                    alert('Design updated successfully!');
+                    renderDashboard();
+                } catch (err) {
+                    formErrorMsg.textContent = err.message;
+                }
+            });
+        }
+
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = e.currentTarget.dataset.id;
+                if (confirm(`Hide design ${id} from the catalog? This is stored in your local browser state.`)) {
+                    store.deleteDesign(id);
+                    renderDashboard();
+                }
+            });
+        });
+
+        // Admin Settings Logic
+        const adminCredsForm = document.getElementById('admin-creds-form');
+        const credsErrorMsg = document.getElementById('creds-error-msg');
+        
+        if (adminCredsForm) {
+            adminCredsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                credsErrorMsg.textContent = '';
+                
+                const newUser = document.getElementById('setting-admin-user').value.trim();
+                const newPass = document.getElementById('setting-admin-pass').value;
+
+                if (!newUser || !newPass) {
+                    credsErrorMsg.textContent = "Both Username and Password are required.";
+                    return;
+                }
+
+                if (newPass.length < 4) {
+                    credsErrorMsg.textContent = "Password must be at least 4 characters.";
+                    return;
+                }
+
+                try {
+                    store.updateAdminCredentials(newUser, newPass);
+                    alert('Credentials updated successfully. Please log in again with your new credentials.');
+                    store.logoutAdmin();
+                    checkAuth();
+                } catch (err) {
+                    credsErrorMsg.textContent = err.message;
+                }
+            });
+        }
+    }
+
+    // Init
+    checkAuth();
+});
