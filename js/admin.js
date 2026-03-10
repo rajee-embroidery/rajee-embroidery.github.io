@@ -34,6 +34,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            const phrase = prompt("Enter the Master Recovery Key to reset your Admin password back to default:");
+            if (phrase === "Rajee@2026") {
+                store.updateAdminCredentials("admin", "admin123");
+                alert("Password successfully reset! You can now log in with:\nUsername: admin\nPassword: admin123");
+            } else if (phrase !== null) {
+                alert("Incorrect Recovery Key. Contact technical support if you have lost your key.");
+            }
+        });
+    }
+
     function renderDashboard() {
         appContent.innerHTML = views.renderAdminView();
         
