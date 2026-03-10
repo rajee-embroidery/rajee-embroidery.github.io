@@ -270,10 +270,17 @@ class Store {
             if (dbGetRes.ok) {
                 const dbDataUrl = await dbGetRes.json();
                 dbSha = dbDataUrl.sha;
-                const dbContentStr = this.b64DecodeUnicode(dbDataUrl.content);
-                const match = dbContentStr.match(/window\.CATALOG_DATA\s*=\s*(\[.*\]);?/s);
-                if (match && match[1]) {
-                    pCatalog = JSON.parse(match[1]);
+                let dbContentStr = this.b64DecodeUnicode(dbDataUrl.content).trim();
+                // Strip BOM
+                if (dbContentStr.charCodeAt(0) === 0xFEFF) {
+                    dbContentStr = dbContentStr.slice(1);
+                }
+                const match = dbContentStr.match(/window\.CATALOG_DATA\s*=\s*(?:\[(.*)\])?/s);
+                if (match && match[0]) {
+                    const arrayStr = match[0].split('=')[1].trim().replace(/;$/, '');
+                    if (arrayStr && arrayStr !== '[]' && arrayStr !== '') {
+                        pCatalog = JSON.parse(arrayStr);
+                    }
                 }
             }
         } catch (e) {
