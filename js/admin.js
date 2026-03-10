@@ -132,6 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.getElementById('edit-mode-id').value = design.id;
             
+            const fileGroup = document.getElementById('file-upload-group');
+            const idGroup = document.getElementById('id-input-group');
+            if (fileGroup) fileGroup.style.display = 'none';
+            if (idGroup) idGroup.style.display = 'block';
+
             const idInput = document.getElementById('add-id');
             idInput.value = design.id;
             idInput.disabled = true;
@@ -160,24 +165,29 @@ document.addEventListener('DOMContentLoaded', () => {
         function cancelEditMode() {
             document.getElementById('edit-mode-id').value = '';
             
+            const fileGroup = document.getElementById('file-upload-group');
+            const idGroup = document.getElementById('id-input-group');
+            if (fileGroup) fileGroup.style.display = 'block';
+            if (idGroup) idGroup.style.display = 'none';
+
             const idInput = document.getElementById('add-id');
             idInput.value = '';
             idInput.disabled = true;
 
             const titleInput = document.getElementById('add-title');
             titleInput.value = '';
-            titleInput.disabled = true;
+            titleInput.disabled = false;
 
             const catInput = document.getElementById('add-category');
             catInput.value = '';
-            catInput.disabled = true;
+            catInput.disabled = false;
 
             const priceInput = document.getElementById('add-price');
             priceInput.value = '';
-            priceInput.disabled = true;
+            priceInput.disabled = false;
 
-            document.getElementById('form-design-title').textContent = 'Edit Design Info';
-            document.getElementById('btn-submit-design').textContent = 'Save Edits';
+            document.getElementById('form-design-title').textContent = 'Add New Design';
+            document.getElementById('btn-submit-design').textContent = 'Upload Design';
             document.getElementById('btn-submit-design').disabled = true;
             btnCancelEdit.classList.add('hidden');
             formErrorMsg.textContent = '';
@@ -192,12 +202,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (adminUploadForm) {
-            adminUploadForm.addEventListener('submit', (e) => {
+            adminUploadForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
                 formErrorMsg.textContent = '';
                 
                 const editId = document.getElementById('edit-mode-id').value;
-                if (!editId) return; // Only editing is allowed
+                const fileInput = document.getElementById('add-file');
+                const file = fileInput ? fileInput.files[0] : null;
+                const submitBtn = document.getElementById('btn-submit-design');
 
                 const designData = {
                     title: document.getElementById('add-title').value.trim(),
@@ -206,11 +218,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
 
                 try {
-                    store.updateDesign(editId, designData);
-                    alert('Design updated successfully!');
-                    renderDashboard();
+                    submitBtn.disabled = true;
+                    if (editId) {
+                        // Edit Mode
+                        store.updateDesign(editId, designData);
+                        alert('Design updated successfully!');
+                        renderDashboard();
+                        cancelEditMode();
+                    } else {
+                        // Upload Mode
+                        if (!file) throw new Error("Please select an image file to upload.");
+                        if (file.size > 5 * 1024 * 1024) throw new Error("File too large. Max 5MB.");
+                        
+                        submitBtn.textContent = 'Uploading to GitHub...';
+                        await store.uploadToGithub(file, designData);
+                        alert('Success! Image and database updated on GitHub. It may take 1-3 minutes to update globally.');
+                        if (fileInput) fileInput.value = '';
+                        document.getElementById('add-title').value = '';
+                        document.getElementById('add-price').value = '';
+                        renderDashboard();
+                    }
                 } catch (err) {
                     formErrorMsg.textContent = err.message;
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = editId ? 'Update Design' : 'Upload Design';
                 }
             });
         }
@@ -254,6 +286,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     checkAuth();
                 } catch (err) {
                     credsErrorMsg.textContent = err.message;
+                }
+            });
+        }
+        
+        // GitHub Settings Form
+        const adminGithubForm = document.getElementById('admin-github-form');
+        if (adminGithubForm) {
+            adminGithubForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const repo = document.getElementById('setting-github-repo').value.trim();
+                const token = document.getElementById('setting-github-token').value.trim();
+                if (repo && token) {
+                    store.setGithubConfig(repo, token);
+                    alert('GitHub Integration configured successfully! You can now upload New Designs from the Manage Designs tab.');
                 }
             });
         }
