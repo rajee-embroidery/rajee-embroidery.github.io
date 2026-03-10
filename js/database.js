@@ -1,1 +1,1 @@
-window.CATALOG_DATA = [];
+﻿window.CATALOG_DATA = ;
