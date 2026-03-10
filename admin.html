@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rajee Embroidery | Admin Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Specific Admin Styles */
+        body { background-color: var(--bg-tertiary); }
+    </style>
+</head>
+<body>
+    <header class="navbar" style="border-bottom: 2px solid var(--brand-gold);">
+        <div class="nav-container">
+            <a href="admin.html" class="brand-logo">
+                <span class="logo-icon">🔒</span> Admin Portal
+            </a>
+            <nav class="nav-links">
+                <a href="index.html" class="nav-link">Return to Shop</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="app-content" style="min-height: 80vh; padding-top: 2rem;">
+        <!-- Views injected here by admin.js -->
+    </main>
+
+    <footer class="footer" style="padding: 2rem 0; text-align: center; border-top: 1px solid var(--glass-border);">
+        <p class="text-muted">&copy; 2026 Rajee Embroidery. Admin Portal.</p>
+    </footer>
+
+    <!-- Admin Login Modal -->
+    <div id="admin-login-modal" class="modal">
+        <div class="modal-content admin-login-content">
+            <h2>Admin Access</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="admin-username">Username:</label>
+                    <input type="text" id="admin-username" class="form-control" placeholder="Enter username (admin)" required>
+                </div>
+                <div class="form-group">
+                    <label for="admin-password">Password:</label>
+                    <input type="password" id="admin-password" class="form-control" placeholder="Enter password" required>
+                </div>
+                <p id="login-error" class="error-msg"></p>
+                <button type="submit" class="btn btn-primary w-full">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/database.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/views.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
